@@ -197,7 +197,7 @@ This will output:
 3. **Sleep irregularity (12.5% importance)** is a stronger predictor than GPA trend — behavioural patterns matter more than outcomes
 4. **Students showing both low LMS activity AND high submission delays are 3.2× more likely to be High risk** than those showing only one signal
 
-
+---
 
 ## 🛠️ Tech Stack
 
@@ -211,10 +211,5 @@ This will output:
 
 ---
 
-## 📄 License
 
-This project was created for the OrgX Behavioural Analytics Hackathon. Dataset is synthetic and does not contain any real student data.
 
----
-
-*Built with ❤️ for EduGuard · OrgX Hackathon 2025*
