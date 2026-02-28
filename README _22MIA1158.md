@@ -1,6 +1,6 @@
 # 🎓 EduGuard — Student Burnout Early Warning System
 
-> **Behavioural Analytics Hackathon · OrgX · Problem Statement 1**  
+> **Behavioural Analytics Hackathon · Problem Statement 1**  
 > *Early Detection of Student Burnout & Dropout Risk using Machine Learning*
 
 ---
@@ -197,19 +197,7 @@ This will output:
 3. **Sleep irregularity (12.5% importance)** is a stronger predictor than GPA trend — behavioural patterns matter more than outcomes
 4. **Students showing both low LMS activity AND high submission delays are 3.2× more likely to be High risk** than those showing only one signal
 
----
 
-## 🏆 Hackathon Details
-
-| | |
-|---|---|
-| **Event** | Behavioural Analytics Hackathon |
-| **Organiser** | OrgX |
-| **Problem Statement** | PS1 — Early Detection of Student Burnout & Dropout Risk |
-| **Start** | Saturday, 28 February 2025 — 9:00 AM |
-| **Deadline** | Sunday, 1 March 2025 — 11:59 PM |
-
----
 
 ## 🛠️ Tech Stack
 
