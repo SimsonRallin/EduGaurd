@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduGuard — Live Student Burnout Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0d12;
+  --surface: #13151d;
+  --surface2: #1a1d28;
+  --surface3: #21253a;
+  --border: #252839;
+  --text: #e2e5f0;
+  --muted: #6b7091;
+  --low: #34d399;
+  --medium: #f59e0b;
+  --high: #fb7185;
+  --accent: #7c6cf0;
+  --accent2: #22d3ee;
+  --accent3: #f472b6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── UPLOAD SCREEN ── */
+#uploadScreen {
+  position: fixed; inset: 0; z-index: 900;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+}
+
+.upload-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 42px;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+.upload-logo span { color: var(--accent); }
+
+.upload-sub {
+  font-size: 14px; color: var(--muted);
+  margin-bottom: 52px;
+}
+
+.drop-zone {
+  width: 480px;
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 52px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: var(--surface);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(124,108,240,0.06);
+}
+
+.drop-icon { font-size: 44px; margin-bottom: 16px; display: block; }
+
+.drop-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px; color: var(--text);
+  margin-bottom: 8px;
+}
+
+.drop-hint { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.drop-hint span { color: var(--accent); font-weight: 500; cursor: pointer; }
+.drop-hint span:hover { text-decoration: underline; }
+
+#fileInput { display: none; }
+
+.or-divider {
+  display: flex; align-items: center; gap: 16px;
+  margin: 20px 0; width: 480px;
+}
+.or-divider::before, .or-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.or-divider span { font-size: 12px; color: var(--muted); }
+
+.use-sample-btn {
+  width: 480px;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.use-sample-btn:hover {
+  border-color: var(--accent2);
+  color: var(--accent2);
+  background: rgba(34,211,238,0.05);
+}
+
+.upload-note {
+  margin-top: 32px;
+  font-size: 11px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── HEADER ── */
+.header {
+  padding: 22px 36px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0;
+  background: rgba(11,13,18,0.95);
+  backdrop-filter: blur(16px);
+  z-index: 100;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.logo-text { font-family: 'DM Serif Display', serif; font-size: 20px; letter-spacing: -0.5px; }
+.logo-text span { color: var(--accent); }
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+.file-info {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 14px;
+  font-size: 12px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.file-info strong { color: var(--accent2); }
+
+.reload-btn {
+  padding: 7px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; cursor: pointer;
+  transition: all 0.2s;
+}
+.reload-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--low); font-weight: 500; letter-spacing: 0.5px;
+}
+.live-dot {
+  width: 6px; height: 6px; background: var(--low); border-radius: 50%;
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)}
+}
+
+/* ── MAIN ── */
+.main { padding: 28px 36px; max-width: 1500px; margin: 0 auto; }
+
+.page-header { margin-bottom: 28px; }
+.page-title { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 4px; }
+.page-title span { color: var(--accent); }
+.page-sub { font-size: 13px; color: var(--muted); }
+
+/* ── STAT CARDS ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 14px; margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.stat-card:hover { border-color: var(--card-color, var(--accent)); transform: translateY(-1px); }
+.stat-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--card-color, var(--accent));
+}
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.stat-val { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--card-color, var(--text)); line-height: 1; margin-bottom: 3px; }
+.stat-sub { font-size: 11px; color: var(--muted); }
+
+/* ── GRID ── */
+.grid-col3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.grid-col2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 22px;
+}
+.card-title {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 1px; font-weight: 500; margin-bottom: 18px;
+}
+
+/* ── RISK BARS ── */
+.risk-bar-row { display: grid; grid-template-columns: 56px 1fr 40px; align-items: center; gap: 10px; margin-bottom: 12px; }
+.rbl { font-size: 12px; font-weight: 600; }
+.rbt { height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+.rbf { height: 100%; border-radius: 4px; width: 0; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+.rbc { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+/* ── FEATURE BARS ── */
+.feat-row { display: grid; grid-template-columns: 1fr 90px 38px; align-items: center; gap: 10px; margin-bottom: 9px; }
+.feat-name { font-size: 11px; color: var(--text); }
+.feat-track { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+.feat-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0; transition: width 1.4s cubic-bezier(0.16,1,0.3,1); }
+.feat-pct { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 14px; flex: 1; max-width: 280px;
+  transition: border-color 0.2s;
+}
+.search-box:focus-within { border-color: var(--accent); }
+.search-box input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px;
+  width: 100%;
+}
+.search-box input::placeholder { color: var(--muted); }
+.search-icon { color: var(--muted); font-size: 14px; }
+
+.filter-btn {
+  padding: 8px 16px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active { color: var(--text); border-color: var(--accent); background: rgba(124,108,240,0.1); }
+.filter-btn.f-high.active { border-color: var(--high); color: var(--high); background: rgba(251,113,133,0.1); }
+.filter-btn.f-medium.active { border-color: var(--medium); color: var(--medium); background: rgba(245,158,11,0.1); }
+.filter-btn.f-low.active { border-color: var(--low); color: var(--low); background: rgba(52,211,153,0.1); }
+
+.sort-select {
+  padding: 8px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; cursor: pointer; outline: none;
+}
+
+.result-count {
+  font-size: 12px; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
+}
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; max-height: 480px; overflow-y: auto; }
+.table-wrap::-webkit-scrollbar { width: 4px; height: 4px; }
+.table-wrap::-webkit-scrollbar-track { background: var(--surface2); }
+.table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead { position: sticky; top: 0; z-index: 10; }
+thead th {
+  background: var(--surface2);
+  text-align: left; padding: 10px 14px 10px 0;
+  font-size: 10px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.8px; font-weight: 500; white-space: nowrap;
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+thead th:hover { color: var(--text); }
+thead th.sorted { color: var(--accent); }
+thead th:first-child { padding-left: 14px; }
+
+tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  cursor: pointer; transition: background 0.12s;
+}
+tbody tr:hover { background: rgba(124,108,240,0.06); }
+tbody tr.highlight { background: rgba(124,108,240,0.1); }
+
+tbody td { padding: 11px 14px 11px 0; color: var(--text); vertical-align: middle; }
+tbody td:first-child { padding-left: 14px; }
+
+.sid { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+.score-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+}
+.b-high { background: rgba(251,113,133,0.15); color: var(--high); }
+.b-medium { background: rgba(245,158,11,0.15); color: var(--medium); }
+.b-low { background: rgba(52,211,153,0.12); color: var(--low); }
+
+.mini-bar {
+  display: flex; align-items: center; gap: 6px;
+}
+.mini-track { width: 52px; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.mini-fill { height: 100%; border-radius: 2px; }
+.mini-val { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; min-width: 30px; }
+
+/* ── CANVAS CHARTS ── */
+.chart-wrap { position: relative; height: 200px; }
+canvas { display: block; }
+
+/* ── DETAIL PANEL ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 150;
+  backdrop-filter: blur(2px);
+}
+.overlay.show { display: block; }
+
+.detail-panel {
+  position: fixed; right: 0; top: 0;
+  width: 360px; height: 100vh;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  padding: 28px 24px; overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  z-index: 200;
+}
+.detail-panel.open { transform: translateX(0); }
+.detail-panel::-webkit-scrollbar { width: 3px; }
+.detail-panel::-webkit-scrollbar-thumb { background: var(--border); }
+
+.d-close {
+  position: absolute; top: 18px; right: 18px;
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.d-close:hover { color: var(--text); }
+
+.d-id { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 2px; margin-top: 4px; }
+.d-name { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 16px; }
+
+.d-ring-wrap { text-align: center; margin: 4px 0 16px; }
+.d-ring-wrap svg { width: 96px; height: 96px; }
+
+.d-signals { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.d-sig {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; background: var(--surface2); border-radius: 8px;
+}
+.d-sig-name { font-size: 12px; color: var(--muted); }
+.d-sig-val { font-size: 11px; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+
+.d-int-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.d-int-item {
+  display: flex; gap: 9px; padding: 9px 10px;
+  background: var(--surface2); border-radius: 8px; margin-bottom: 7px;
+  font-size: 11px; color: var(--text); line-height: 1.5;
+  border-left: 2px solid transparent;
+}
+
+/* ── SCATTER ── */
+.chart-legend { display: flex; gap: 16px; margin-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+.legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── PAGINATION ── */
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; margin-top: 16px;
+}
+.page-btn {
+  width: 32px; height: 32px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 6px;
+  color: var(--muted); font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; font-family: 'JetBrains Mono', monospace;
+}
+.page-btn:hover { border-color: var(--accent); color: var(--accent); }
+.page-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── FADE IN ── */
+.fade { animation: fadeUp 0.5s ease forwards; opacity: 0; transform: translateY(12px); }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+/* ── EMPTY ── */
+.empty-state {
+  text-align: center; padding: 48px 20px;
+  color: var(--muted); font-size: 13px;
+}
+.empty-icon { font-size: 32px; margin-bottom: 12px; display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ UPLOAD SCREEN ═══════════════ -->
+<div id="uploadScreen">
+  <div class="upload-logo">Edu<span>Guard</span></div>
+  <div class="upload-sub">Student Burnout Early Warning System · Behavioural Analytics</div>
+
+  <div class="drop-zone" id="dropZone">
+    <span class="drop-icon">📂</span>
+    <div class="drop-title">Drop your CSV file here</div>
+    <div class="drop-hint">
+      Drag & drop <code>student_burnout_data.csv</code><br>
+      or <span onclick="document.getElementById('fileInput').click()">browse to upload</span>
+    </div>
+    <input type="file" id="fileInput" accept=".csv">
+  </div>
+
+  <div class="or-divider"><span>or</span></div>
+
+  <button class="use-sample-btn" onclick="loadSampleData()">
+    ⚡ Use built-in sample data (500 students)
+  </button>
+
+  <div class="upload-note">Expected columns: student_id · lms_logins_per_week · attendance_rate · avg_submission_delay_days · gpa_trend · sleep_irregularity_score · social_activity_drop · sentiment_score · weekend_activity_ratio · burnout_score · burnout_level · dropout_probability</div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div id="dashboard" style="display:none">
+
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-text">Edu<span>Guard</span></div>
+    </div>
+    <div class="header-right">
+      <div class="file-info">📄 <strong id="fileNameDisplay">—</strong> · <span id="recordCount">0</span> students</div>
+      <button class="reload-btn" onclick="resetDashboard()">↩ Load new file</button>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    </div>
+  </header>
+
+  <div class="main">
+
+    <div class="page-header fade">
+      <div class="page-title">Student Risk <span>Intelligence</span></div>
+      <div class="page-sub" id="pageSubLine">Behavioural signals analysed from your dataset · Click any row to view full student profile</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row fade" style="animation-delay:0.05s">
+      <div class="stat-card" style="--card-color:var(--high)">
+        <div class="stat-label">High Risk</div>
+        <div class="stat-val" id="sHighCount">—</div>
+        <div class="stat-sub" id="sHighPct">—</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--medium)">
+        <div class="stat-label">Medium Risk</div>
+        <div class="stat-val" id="sMedCount">—</div>
+        <div class="stat-sub" id="sMedPct">—</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--low)">
+        <div class="stat-label">Low Risk</div>
+        <div class="stat-val" id="sLowCount">—</div>
+        <div class="stat-sub" id="sLowPct">—</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--accent2)">
+        <div class="stat-label">Avg Burnout Score</div>
+        <div class="stat-val" id="sAvgScore">—</div>
+        <div class="stat-sub" id="sScoreRange">—</div>
+      </div>
+      <div class="stat-card" style="--card-color:var(--accent3)">
+        <div class="stat-label">Avg Dropout Risk</div>
+        <div class="stat-val" id="sAvgDropout">—</div>
+        <div class="stat-sub" id="sDropoutHigh">—</div>
+      </div>
+    </div>
+
+    <!-- ROW: distribution + features + interventions -->
+    <div class="grid-col3">
+
+      <div class="card fade" style="animation-delay:0.1s">
+        <div class="card-title">Risk Distribution</div>
+        <div id="riskBarsContainer"></div>
+
+        <div style="margin-top:24px">
+          <div class="card-title">Quick Averages by Group</div>
+          <div id="groupAvgs" style="font-size:11px;color:var(--muted);line-height:2"></div>
+        </div>
+      </div>
+
+      <div class="card fade" style="animation-delay:0.15s">
+        <div class="card-title">Feature Weight Importance</div>
+        <div id="featureBars"></div>
+        <div style="margin-top:14px;font-size:10px;color:var(--muted);line-height:1.6">
+          Computed from weighted contribution to composite burnout score formula used during dataset generation.
+        </div>
+      </div>
+
+      <div class="card fade" style="animation-delay:0.2s">
+        <div class="card-title">Intervention Framework</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="d-int-item" style="border-left-color:var(--high)">
+            <span>🚨</span>
+            <div><div style="font-weight:600;margin-bottom:3px;font-size:12px">High Risk — Immediate</div>
+            Personal counsellor within 48h · Academic load review · Mental health referral · Peer mentor pairing</div>
+          </div>
+          <div class="d-int-item" style="border-left-color:var(--medium)">
+            <span>⚠️</span>
+            <div><div style="font-weight:600;margin-bottom:3px;font-size:12px">Medium Risk — Proactive</div>
+            Fortnightly advisor check-ins · LMS nudge alerts · Study group matching · Progress report sharing</div>
+          </div>
+          <div class="d-int-item" style="border-left-color:var(--low)">
+            <span>✅</span>
+            <div><div style="font-weight:600;margin-bottom:3px;font-size:12px">Low Risk — Reinforce</div>
+            Milestone celebration · Peer mentoring role · Stretch challenges · Consistent monitoring</div>
+          </div>
+          <div class="d-int-item" style="border-left-color:var(--accent)">
+            <span>🔁</span>
+            <div><div style="font-weight:600;margin-bottom:3px;font-size:12px">All Students — Weekly Loop</div>
+            Scores refresh as new behavioural data streams in. Risk levels adjust dynamically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: scatter + trend -->
+    <div class="grid-col2">
+      <div class="card fade" style="animation-delay:0.25s">
+        <div class="card-title">LMS Activity vs Burnout Score — All Students</div>
+        <div class="chart-wrap"><canvas id="scatterCanvas"></canvas></div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--high)"></div>High</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--medium)"></div>Medium</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--low)"></div>Low</div>
+        </div>
+      </div>
+
+      <div class="card fade" style="animation-delay:0.3s">
+        <div class="card-title">Burnout Score Distribution — Histogram</div>
+        <div class="chart-wrap"><canvas id="histCanvas"></canvas></div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--low)"></div>Low (0–33)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--medium)"></div>Medium (34–66)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--high)"></div>High (67–100)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card fade" style="animation-delay:0.35s">
+      <div class="card-title">All Students — Full Dataset <span id="tableCountBadge" style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:10px;margin-left:8px"></span></div>
+
+      <div class="controls">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by student ID...">
+        </div>
+        <button class="filter-btn f-all active" onclick="setFilter('All',this)">All</button>
+        <button class="filter-btn f-high" onclick="setFilter('High',this)">🔴 High</button>
+        <button class="filter-btn f-medium" onclick="setFilter('Medium',this)">🟡 Medium</button>
+        <button class="filter-btn f-low" onclick="setFilter('Low',this)">🟢 Low</button>
+        <select class="sort-select" id="sortSelect" onchange="applySort()">
+          <option value="burnout_score_desc">Sort: Burnout ↓</option>
+          <option value="burnout_score_asc">Sort: Burnout ↑</option>
+          <option value="dropout_probability_desc">Sort: Dropout ↓</option>
+          <option value="lms_logins_per_week_asc">Sort: LMS ↑</option>
+          <option value="attendance_rate_asc">Sort: Attendance ↑</option>
+          <option value="student_id_asc">Sort: ID</option>
+        </select>
+        <div class="result-count" id="resultCount"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortCol('student_id')">ID <span id="th_student_id"></span></th>
+              <th onclick="sortCol('burnout_score')">Burnout Score <span id="th_burnout_score">↓</span></th>
+              <th onclick="sortCol('burnout_level')">Risk Level</th>
+              <th onclick="sortCol('lms_logins_per_week')">LMS / wk</th>
+              <th onclick="sortCol('attendance_rate')">Attendance</th>
+              <th onclick="sortCol('avg_submission_delay_days')">Delay (days)</th>
+              <th onclick="sortCol('sentiment_score')">Sentiment</th>
+              <th onclick="sortCol('sleep_irregularity_score')">Sleep Irreg.</th>
+              <th onclick="sortCol('dropout_probability')">Dropout Risk</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detailPanel">
+  <button class="d-close" onclick="closePanel()">×</button>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let allData = [];
+let filteredData = [];
+let currentFilter = 'All';
+let currentSort = { col: 'burnout_score', dir: 'desc' };
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let fileName = '';
+
+const featureWeights = [
+  { name: 'LMS Login Frequency', pct: 24.5 },
+  { name: 'Submission Delay Avg', pct: 24.2 },
+  { name: 'Attendance Rate', pct: 15.0 },
+  { name: 'Sleep Irregularity', pct: 12.5 },
+  { name: 'Sentiment Score', pct: 7.8 },
+  { name: 'GPA Trend', pct: 5.7 },
+  { name: 'Weekend Activity', pct: 5.2 },
+  { name: 'Social Activity Drop', pct: 5.1 },
+];
+
+const interventions = {
+  High: [
+    '🚨 Assign personal counsellor — contact within 48 hours',
+    '📋 Review & reduce academic load this semester',
+    '🤝 Pair with senior peer mentor for weekly 1-on-1',
+    '🏥 Refer to campus mental health services',
+    '📱 Enable daily LMS nudge alerts & monitor logins live'
+  ],
+  Medium: [
+    '📅 Fortnightly check-ins with academic advisor',
+    '🔔 Send nudge after 3+ days without LMS login',
+    '👥 Recommend a matched study group',
+    '📖 Share time management & study skills workshops',
+    '📊 Show student their own progress report'
+  ],
+  Low: [
+    '🌟 Send a positive milestone acknowledgement message',
+    '🧠 Offer optional enrichment challenges',
+    '👥 Invite to mentor peers who are struggling',
+    '📈 Set stretch goals collaboratively with advisor'
+  ]
+};
+
+// ═══════════════════════════════════════════════
+// CSV PARSING
+// ═══════════════════════════════════════════════
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
+    const obj = {};
+    headers.forEach((h, i) => {
+      const v = vals[i] ?? '';
+      obj[h] = isNaN(v) || v === '' ? v : parseFloat(v);
+    });
+    return obj;
+  }).filter(r => r.student_id);
+}
+
+// ═══════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if (e.target.files[0]) readFile(e.target.files[0]); });
+
+function readFile(file) {
+  fileName = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const data = parseCSV(ev.target.result);
+    if (!data.length || !data[0].burnout_score) {
+      alert('CSV format not recognised. Please use the student_burnout_data.csv file.');
+      return;
+    }
+    initDashboard(data, file.name);
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════
+// SAMPLE DATA (500 students generated in-browser)
+// ═══════════════════════════════════════════════
+function loadSampleData() {
+  const data = generateSampleData(500);
+  initDashboard(data, 'student_burnout_data.csv (built-in sample)');
+}
+
+function mulberry32(seed) {
+  return function() {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function betaSample(r, a, b) {
+  // Approximation using normal distribution
+  const mean = a / (a + b);
+  const variance = (a * b) / ((a + b) ** 2 * (a + b + 1));
+  const sd = Math.sqrt(variance);
+  let v = mean + sd * (r() + r() + r() + r() + r() + r() - 3) / 3;
+  return Math.max(0, Math.min(1, v));
+}
+
+function generateSampleData(N) {
+  const rand = mulberry32(42);
+  const data = [];
+  for (let i = 0; i < N; i++) {
+    const lms = betaSample(rand, 2, 2) * 14;
+    let attendance = betaSample(rand, 3, 1.5);
+    attendance = Math.max(0, Math.min(1, attendance + 0.15 * (lms / 14) + (rand() - 0.5) * 0.1));
+    const delay = -Math.log(rand() + 0.001) * 1.5;
+    const gpa = (rand() - 0.5) * 0.6;
+    const sleep = betaSample(rand, 1.5, 3);
+    const social = betaSample(rand, 1.5, 4);
+    let sentiment = betaSample(rand, 3, 2);
+    sentiment = Math.max(0, Math.min(1, sentiment - 0.2 * delay / 5 + (rand() - 0.5) * 0.1));
+    const weekend = betaSample(rand, 2, 3);
+
+    const bs = Math.max(0, Math.min(100,
+      (1 - lms / 14) * 25 +
+      (1 - attendance) * 20 +
+      Math.min(delay / 5, 1) * 20 +
+      sleep * 15 +
+      (1 - sentiment) * 10 +
+      social * 10
+    ) * 1.3 + (rand() - 0.5) * 6);
+
+    const level = bs > 66 ? 'High' : bs > 33 ? 'Medium' : 'Low';
+    const dropout = Math.max(0, Math.min(1, (bs - 20) / 80 + (rand() - 0.5) * 0.1));
+
+    data.push({
+      student_id: `STU${String(i + 1).padStart(4, '0')}`,
+      lms_logins_per_week: +lms.toFixed(2),
+      attendance_rate: +attendance.toFixed(3),
+      avg_submission_delay_days: +Math.max(0, delay).toFixed(2),
+      gpa_trend: +gpa.toFixed(3),
+      sleep_irregularity_score: +sleep.toFixed(3),
+      social_activity_drop: +social.toFixed(3),
+      sentiment_score: +sentiment.toFixed(3),
+      weekend_activity_ratio: +weekend.toFixed(3),
+      burnout_score: +bs.toFixed(1),
+      burnout_level: level,
+      dropout_probability: +dropout.toFixed(3)
+    });
+  }
+  return data;
+}
+
+// ═══════════════════════════════════════════════
+// INIT DASHBOARD
+// ═══════════════════════════════════════════════
+function initDashboard(data, name) {
+  allData = data;
+  fileName = name;
+  document.getElementById('uploadScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('fileNameDisplay').textContent = name;
+  document.getElementById('recordCount').textContent = data.length;
+
+  buildStatCards();
+  buildRiskBars();
+  buildFeatureBars();
+  buildGroupAvgs();
+
+  filteredData = [...allData];
+  currentFilter = 'All';
+  currentPage = 1;
+  renderTable();
+
+  setTimeout(() => {
+    drawScatter();
+    drawHistogram();
+    animateBars();
+  }, 300);
+}
+
+function resetDashboard() {
+  document.getElementById('uploadScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  allData = []; filteredData = [];
+}
+
+// ═══════════════════════════════════════════════
+// STAT CARDS
+// ═══════════════════════════════════════════════
+function buildStatCards() {
+  const N = allData.length;
+  const high = allData.filter(d => d.burnout_level === 'High').length;
+  const med = allData.filter(d => d.burnout_level === 'Medium').length;
+  const low = allData.filter(d => d.burnout_level === 'Low').length;
+  const avgScore = (allData.reduce((s, d) => s + d.burnout_score, 0) / N).toFixed(1);
+  const minScore = Math.min(...allData.map(d => d.burnout_score)).toFixed(0);
+  const maxScore = Math.max(...allData.map(d => d.burnout_score)).toFixed(0);
+  const avgDropout = (allData.reduce((s, d) => s + d.dropout_probability, 0) / N * 100).toFixed(1);
+  const highDropout = allData.filter(d => d.dropout_probability > 0.5).length;
+
+  set('sHighCount', high);
+  set('sHighPct', `${(high/N*100).toFixed(1)}% · Immediate action`);
+  set('sMedCount', med);
+  set('sMedPct', `${(med/N*100).toFixed(1)}% · Monitor closely`);
+  set('sLowCount', low);
+  set('sLowPct', `${(low/N*100).toFixed(1)}% · On track`);
+  set('sAvgScore', avgScore);
+  set('sScoreRange', `Range ${minScore}–${maxScore} across cohort`);
+  set('sAvgDropout', avgDropout + '%');
+  set('sDropoutHigh', `${highDropout} students >50% dropout risk`);
+  set('pageSubLine', `${N} students · ${allData.filter(d=>d.burnout_score>66).length} flagged high risk · Click any row for full profile`);
+}
+
+function set(id, val) { document.getElementById(id).textContent = val; }
+
+// ═══════════════════════════════════════════════
+// RISK BARS
+// ═══════════════════════════════════════════════
+function buildRiskBars() {
+  const N = allData.length;
+  const high = allData.filter(d => d.burnout_level === 'High').length;
+  const med  = allData.filter(d => d.burnout_level === 'Medium').length;
+  const low  = allData.filter(d => d.burnout_level === 'Low').length;
+
+  document.getElementById('riskBarsContainer').innerHTML = `
+    ${riskBar('High', 'var(--high)', high, N)}
+    ${riskBar('Medium', 'var(--medium)', med, N)}
+    ${riskBar('Low', 'var(--low)', low, N)}
+  `;
+}
+
+function riskBar(label, color, count, total) {
+  const pct = (count / total * 100).toFixed(1);
+  return `
+    <div class="risk-bar-row">
+      <div class="rbl" style="color:${color}">${label}</div>
+      <div class="rbt"><div class="rbf" style="background:${color}" data-width="${pct}"></div></div>
+      <div class="rbc">${count}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// FEATURE BARS
+// ═══════════════════════════════════════════════
+function buildFeatureBars() {
+  document.getElementById('featureBars').innerHTML = featureWeights.map(f => `
+    <div class="feat-row">
+      <div class="feat-name">${f.name}</div>
+      <div class="feat-track"><div class="feat-fill" data-width="${f.pct * 4}" style="width:0%"></div></div>
+      <div class="feat-pct">${f.pct}%</div>
+    </div>
+  `).join('');
+}
+
+function animateBars() {
+  document.querySelectorAll('[data-width]').forEach(el => {
+    el.style.width = el.dataset.width + '%';
+  });
+}
+
+// ═══════════════════════════════════════════════
+// GROUP AVERAGES
+// ═══════════════════════════════════════════════
+function buildGroupAvgs() {
+  const groups = ['High', 'Medium', 'Low'];
+  const lines = groups.map(g => {
+    const sub = allData.filter(d => d.burnout_level === g);
+    if (!sub.length) return '';
+    const avgLMS = (sub.reduce((s,d)=>s+d.lms_logins_per_week,0)/sub.length).toFixed(1);
+    const avgAtt = (sub.reduce((s,d)=>s+d.attendance_rate,0)/sub.length*100).toFixed(0);
+    const color = g === 'High' ? 'var(--high)' : g === 'Medium' ? 'var(--medium)' : 'var(--low)';
+    return `<span style="color:${color};font-weight:600">${g}:</span> LMS ${avgLMS}/wk · Attendance ${avgAtt}%`;
+  });
+  document.getElementById('groupAvgs').innerHTML = lines.join('<br>');
+}
+
+// ═══════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════
+let activeFilter = 'All';
+let searchQuery = '';
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase();
+  currentPage = 1;
+  applyFilters();
+});
+
+function setFilter(level, btn) {
+  activeFilter = level;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPage = 1;
+  applyFilters();
+}
+
+function applySort() {
+  const val = document.getElementById('sortSelect').value;
+  const [col, dir] = val.split('_').reduce((acc, part, i, arr) => {
+    if (part === 'asc' || part === 'desc') {
+      acc[1] = part;
+      acc[0] = arr.slice(0, i).join('_');
+    }
+    return acc;
+  }, ['', '']);
+  currentSort = { col, dir };
+  currentPage = 1;
+  applyFilters();
+}
+
+function sortCol(col) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+  } else {
+    currentSort = { col, dir: 'desc' };
+  }
+  // update header indicators
+  document.querySelectorAll('thead th span').forEach(s => s.textContent = '');
+  const el = document.getElementById('th_' + col);
+  if (el) el.textContent = currentSort.dir === 'desc' ? '↓' : '↑';
+  currentPage = 1;
+  applyFilters();
+}
+
+function applyFilters() {
+  let d = [...allData];
+  if (activeFilter !== 'All') d = d.filter(r => r.burnout_level === activeFilter);
+  if (searchQuery) d = d.filter(r => r.student_id.toLowerCase().includes(searchQuery));
+
+  // sort
+  d.sort((a, b) => {
+    const av = a[currentSort.col], bv = b[currentSort.col];
+    if (typeof av === 'string') return currentSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return currentSort.dir === 'asc' ? av - bv : bv - av;
+  });
+
+  filteredData = d;
+  renderTable();
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredData.slice(start, start + PAGE_SIZE);
+  const total = filteredData.length;
+
+  document.getElementById('resultCount').textContent = `${total} students`;
+  document.getElementById('tableCountBadge').textContent = `${total} shown`;
+
+  const tbody = document.getElementById('tableBody');
+  if (!page.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">🔍</span>No students match your filters.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = page.map(s => {
+      const scoreColor = s.burnout_level === 'High' ? 'var(--high)' : s.burnout_level === 'Medium' ? 'var(--medium)' : 'var(--low)';
+      const dropColor = s.dropout_probability > 0.5 ? 'var(--high)' : s.dropout_probability > 0.3 ? 'var(--medium)' : 'var(--low)';
+      const sentPct = Math.round(s.sentiment_score * 100);
+      const sentColor = sentPct < 40 ? 'var(--high)' : sentPct < 60 ? 'var(--medium)' : 'var(--low)';
+      const sleepColor = s.sleep_irregularity_score > 0.6 ? 'var(--high)' : s.sleep_irregularity_score > 0.35 ? 'var(--medium)' : 'var(--low)';
+      return `
+      <tr onclick="openPanel('${s.student_id}')">
+        <td><span class="sid">${s.student_id}</span></td>
+        <td><span class="score-num" style="color:${scoreColor}">${s.burnout_score}</span></td>
+        <td><span class="badge b-${s.burnout_level.toLowerCase()}">${s.burnout_level}</span></td>
+        <td>${s.lms_logins_per_week}</td>
+        <td>${Math.round(s.attendance_rate * 100)}%</td>
+        <td>${s.avg_submission_delay_days}d</td>
+        <td>
+          <div class="mini-bar">
+            <div class="mini-track"><div class="mini-fill" style="width:${sentPct}%;background:${sentColor}"></div></div>
+            <div class="mini-val">${sentPct}%</div>
+          </div>
+        </td>
+        <td>
+          <div class="mini-bar">
+            <div class="mini-track"><div class="mini-fill" style="width:${Math.round(s.sleep_irregularity_score*100)}%;background:${sleepColor}"></div></div>
+            <div class="mini-val">${(s.sleep_irregularity_score*100).toFixed(0)}%</div>
+          </div>
+        </td>
+        <td>
+          <div class="mini-bar">
+            <div class="mini-track"><div class="mini-fill" style="width:${Math.round(s.dropout_probability*100)}%;background:${dropColor}"></div></div>
+            <div class="mini-val" style="color:${dropColor}">${(s.dropout_probability*100).toFixed(0)}%</div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  buildPagination(total);
+}
+
+function buildPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  const range = [];
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || (i >= currentPage-2 && i <= currentPage+2)) range.push(i);
+    else if (range[range.length-1] !== '…') range.push('…');
+  }
+  range.forEach(p => {
+    if (p === '…') html += `<span style="color:var(--muted);padding:0 4px">…</span>`;
+    else html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  });
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
+  pag.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.table-wrap').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════
+function openPanel(id) {
+  const s = allData.find(r => r.student_id === id);
+  if (!s) return;
+
+  const scoreColor = s.burnout_level === 'High' ? '#fb7185' : s.burnout_level === 'Medium' ? '#f59e0b' : '#34d399';
+  const circ = 2 * Math.PI * 36;
+  const offset = circ * (1 - s.burnout_score / 100);
+
+  const sigColor = (val, lo, hi) => val >= hi ? '#fb7185' : val >= lo ? '#f59e0b' : '#34d399';
+  const sigColorInv = (val, lo, hi) => val <= lo ? '#34d399' : val <= hi ? '#f59e0b' : '#fb7185';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="d-id">${s.student_id}</div>
+    <div class="d-name">Student Profile</div>
+
+    <div class="d-ring-wrap">
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="36" fill="none" stroke="#21253a" stroke-width="8"/>
+        <circle cx="50" cy="50" r="36" fill="none" stroke="${scoreColor}" stroke-width="8"
+          stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"
+          stroke-linecap="round" transform="rotate(-90 50 50)"
+          style="transition:stroke-dashoffset 1s ease"/>
+        <text x="50" y="47" text-anchor="middle" fill="${scoreColor}" font-family="DM Serif Display,serif" font-size="17">${s.burnout_score}</text>
+        <text x="50" y="59" text-anchor="middle" fill="#6b7091" font-family="DM Sans,sans-serif" font-size="7">BURNOUT SCORE</text>
+      </svg>
+      <div><span class="badge b-${s.burnout_level.toLowerCase()}" style="font-size:12px;padding:4px 14px">${s.burnout_level} Risk</span></div>
+    </div>
+
+    <div class="d-int-title">Behavioural Signals</div>
+    <div class="d-signals">
+      <div class="d-sig">
+        <span class="d-sig-name">LMS Logins / Week</span>
+        <span class="d-sig-val" style="color:${sigColorInv(s.lms_logins_per_week,4,8)}">${s.lms_logins_per_week}</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Attendance Rate</span>
+        <span class="d-sig-val" style="color:${sigColorInv(s.attendance_rate,0.6,0.8)}">${(s.attendance_rate*100).toFixed(0)}%</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Submission Delay</span>
+        <span class="d-sig-val" style="color:${sigColor(s.avg_submission_delay_days,1.5,3)}">${s.avg_submission_delay_days} days</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">GPA Trend</span>
+        <span class="d-sig-val" style="color:${s.gpa_trend>=0?'#34d399':'#fb7185'}">${s.gpa_trend >= 0 ? '+' : ''}${s.gpa_trend}</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Sleep Irregularity</span>
+        <span class="d-sig-val" style="color:${sigColor(s.sleep_irregularity_score,0.35,0.6)}">${(s.sleep_irregularity_score*100).toFixed(0)}%</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Sentiment Score</span>
+        <span class="d-sig-val" style="color:${sigColorInv(s.sentiment_score,0.4,0.6)}">${(s.sentiment_score*100).toFixed(0)}%</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Social Activity Drop</span>
+        <span class="d-sig-val" style="color:${sigColor(s.social_activity_drop,0.3,0.6)}">${(s.social_activity_drop*100).toFixed(0)}%</span>
+      </div>
+      <div class="d-sig">
+        <span class="d-sig-name">Dropout Probability</span>
+        <span class="d-sig-val" style="color:${sigColor(s.dropout_probability,0.3,0.5)}">${(s.dropout_probability*100).toFixed(1)}%</span>
+      </div>
+    </div>
+
+    <div class="d-int-title">Recommended Interventions</div>
+    ${(interventions[s.burnout_level]||[]).map(i=>`
+      <div class="d-int-item" style="border-left-color:${scoreColor}">${i}</div>
+    `).join('')}
+  `;
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+// SCATTER CHART — real data
+// ═══════════════════════════════════════════════
+function drawScatter() {
+  const canvas = document.getElementById('scatterCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 0;
+  const H = 200;
+  canvas.width = W; canvas.height = H;
+
+  const pad = { l: 36, r: 12, t: 12, b: 32 };
+
+  ctx.fillStyle = '#13151d';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#1a1d28'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + (W - pad.l - pad.r) * i / 5;
+    const y = pad.t + (H - pad.t - pad.b) * i / 5;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+
+  // Axis labels
+  ctx.fillStyle = '#6b7091'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  ctx.fillText('LMS Logins / Week →', W / 2, H - 4);
+  ctx.save(); ctx.translate(10, H / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Burnout Score', 0, 0); ctx.restore();
+
+  const colors = { High: '#fb7185cc', Medium: '#f59e0bcc', Low: '#34d399cc' };
+  const strokeC = { High: '#fb7185', Medium: '#f59e0b', Low: '#34d399' };
+
+  // Sample up to 300 for performance
+  const sample = allData.length > 300 ? allData.filter((_, i) => i % Math.ceil(allData.length/300) === 0) : allData;
+
+  sample.forEach(d => {
+    const x = pad.l + (d.lms_logins_per_week / 14) * (W - pad.l - pad.r);
+    const y = pad.t + (1 - d.burnout_score / 100) * (H - pad.t - pad.b);
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = colors[d.burnout_level];
+    ctx.fill();
+    ctx.strokeStyle = strokeC[d.burnout_level];
+    ctx.lineWidth = 0.5; ctx.stroke();
+  });
+
+  // Trend line (linear regression)
+  let sx=0,sy=0,sxy=0,sx2=0,n=allData.length;
+  allData.forEach(d => { sx+=d.lms_logins_per_week; sy+=d.burnout_score; sxy+=d.lms_logins_per_week*d.burnout_score; sx2+=d.lms_logins_per_week**2; });
+  const m = (n*sxy - sx*sy)/(n*sx2 - sx**2);
+  const b2 = (sy - m*sx)/n;
+  ctx.beginPath();
+  ctx.strokeStyle = '#7c6cf0'; ctx.lineWidth = 1.5; ctx.setLineDash([4,3]);
+  const x0 = pad.l, x1 = W - pad.r;
+  const y0 = pad.t + (1 - (m*0 + b2)/100)*(H-pad.t-pad.b);
+  const y1 = pad.t + (1 - (m*14 + b2)/100)*(H-pad.t-pad.b);
+  ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ═══════════════════════════════════════════════
+// HISTOGRAM — burnout score distribution
+// ═══════════════════════════════════════════════
+function drawHistogram() {
+  const canvas = document.getElementById('histCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth;
+  const H = 200;
+  canvas.width = W; canvas.height = H;
+  const pad = { l: 36, r: 12, t: 12, b: 32 };
+
+  ctx.fillStyle = '#13151d'; ctx.fillRect(0,0,W,H);
+
+  // Bins: 0-10, 10-20, ... 90-100
+  const bins = Array(10).fill(0);
+  allData.forEach(d => {
+    const bi = Math.min(9, Math.floor(d.burnout_score / 10));
+    bins[bi]++;
+  });
+  const maxBin = Math.max(...bins);
+
+  const barW = (W - pad.l - pad.r) / 10;
+
+  bins.forEach((count, i) => {
+    const score = i * 10 + 5;
+    const color = score > 66 ? '#fb7185' : score > 33 ? '#f59e0b' : '#34d399';
+    const barH = count / maxBin * (H - pad.t - pad.b);
+    const x = pad.l + i * barW;
+    const y = H - pad.b - barH;
+
+    // gradient fill
+    const grad = ctx.createLinearGradient(x, y, x, H - pad.b);
+    grad.addColorStop(0, color + 'dd');
+    grad.addColorStop(1, color + '33');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x + 1, y, barW - 2, barH);
+
+    // count label
+    if (count > 0) {
+      ctx.fillStyle = '#6b7091'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+      ctx.fillText(count, x + barW/2, y - 3);
+    }
+  });
+
+  // X axis labels
+  ctx.fillStyle = '#6b7091'; ctx.font = '8px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+  [0,20,40,60,80,100].forEach(v => {
+    const x = pad.l + (v/100)*(W-pad.l-pad.r);
+    ctx.fillText(v, x, H - 4);
+  });
+  ctx.textAlign = 'center'; ctx.fillText('Burnout Score →', W/2, H);
+
+  // Grid lines
+  ctx.strokeStyle = '#1a1d28'; ctx.lineWidth = 0.5;
+  [0.25,0.5,0.75,1].forEach(f => {
+    const y = pad.t + (1-f)*(H-pad.t-pad.b);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle = '#3a3f5a'; ctx.font = '8px JetBrains Mono'; ctx.textAlign = 'right';
+    ctx.fillText(Math.round(f*maxBin), pad.l-2, y+3);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// RESIZE
+// ═══════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  if (allData.length) { drawScatter(); drawHistogram(); }
+});
+</script>
+</body>
+</html>
